@@ -1,0 +1,82 @@
+/*
+Question:
+1. How does Rock Music Popularity Change Percentage ?
+2. How many popularity value does rock music have for each year?
+3. Which genres of Rock music are the most popular?
+4. Who is the most popular artist in the Rock music genre?
+5. Which song in the Rock music genre is the most popular?*/
+
+
+/*1. How does Rock Music Popularity Change Percentage ?*/
+
+WITH RockPopularityByYear AS (
+    SELECT strftime('%Y', AlbumReleaseDate) AS ReleaseYear,
+           SUM(CASE WHEN ArtistGenres LIKE '%rock%' THEN Popularity ELSE 0 END) AS RockPopularity
+    FROM SpotifyTopList
+    WHERE strftime('%Y', AlbumReleaseDate) BETWEEN '2018' AND '2022'
+    GROUP BY ReleaseYear
+)
+SELECT
+    r1.ReleaseYear,
+    r1.RockPopularity AS InitialValue,
+    LAG(r1.RockPopularity) OVER (ORDER BY r1.ReleaseYear) AS PreviousYearInitialValue,
+    r1.RockPopularity - LAG(r1.RockPopularity) OVER (ORDER BY r1.ReleaseYear) AS FinalValue,
+    CASE
+        WHEN LAG(r1.RockPopularity) OVER (ORDER BY r1.ReleaseYear) IS NULL THEN NULL
+        ELSE (r1.RockPopularity - LAG(r1.RockPopularity) OVER (ORDER BY r1.ReleaseYear)) * 100.0 / LAG(r1.RockPopularity) OVER (ORDER BY r1.ReleaseYear)
+    END AS PercentageDecrease
+FROM
+    RockPopularityByYear r1
+ORDER BY r1.ReleaseYear;
+
+ReleaseYear     InitialValue    PreviousYearInitial    FinalValue    PercentageDecrease  
+2022	          1325	            NULL                   NULL             NULL
+2021	          777	            1325                   -548            -41.36 
+2020	          716	            777                    -61             -7.85
+2019	          615	            716                    -101            -14.10
+2018	          563	            615                    -52             -8.45
+
+
+/*2. How many popularity value does rock music have for each year?*/
+SELECT strftime('%Y', AlbumReleaseDate) AS ReleaseYear,
+           SUM(CASE WHEN ArtistGenres LIKE '%rock%' THEN Popularity ELSE 0 END) AS RockPopularity
+    FROM SpotifyTopList
+    WHERE strftime('%Y', AlbumReleaseDate) BETWEEN '2018' AND '2022'
+    GROUP BY ReleaseYear
+
+ReleaseYear RockPopularity
+2018	      1325
+2019	      777
+2020	      716
+2021	      615
+2022	      563
+
+/*3. How many popularity value does rock music have for each year?*/
+SELECT ArtistGenres,
+sum(Popularity) as Sum_Popularity
+FROM SpotifyTopList
+WHERE ArtistGenres LIKE '%rock%' AND strftime('%Y', AlbumReleaseDate) BETWEEN '2018' AND '2022'
+GROUP BY ArtistGenres
+ORDER BY Sum_Popularity DESC
+LIMIT 1;
+
+ArtistGenres : modern rock,pop,rock
+Sum_Popularity : 413
+
+/*4. Who is the most popular artist in the Rock music genre?*/
+SELECT ArtistName,
+sum(Popularity) as Sum_Popularity
+FROM SpotifyTopList
+WHERE ArtistGenres LIKE '%rock%' AND strftime('%Y', AlbumReleaseDate) BETWEEN '2018' AND '2022'
+GROUP BY ArtistGenres
+ORDER BY Sum_Popularity DESC;
+
+/*5. Which song in the Rock music genre is the most popular?*/
+SELECT TrackName,
+sum(Popularity) as Sum_Popularity
+FROM SpotifyTopList
+WHERE ArtistGenres LIKE '%rock%' AND strftime('%Y', AlbumReleaseDate) BETWEEN '2018' AND '2022'
+GROUP BY ArtistGenres
+ORDER BY Sum_Popularity DESC;
+
+TrackName : Bad liar
